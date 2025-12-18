@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>N-Queens Visualizer</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background-color: #f4f4f4; }
+        #controls { margin: 20px; }
+        /* The Board Styling */
+        #board {
+            display: grid;
+            margin: 20px auto;
+            border: 5px solid #333;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+        .white { background-color: #fff; }
+        .black { background-color: #999; }
+        .queen { color: #e74c3c; animation: pop 0.3s ease; }
+        @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <h1>N-Queens Visualizer</h1>
+    
+    <div id="controls">
+        Board Size (N): 
+        <input type="range" id="n-size" min="4" max="10" value="8" oninput="updateLabel(this.value)">
+        <span id="n-label">8</span>
+        <button onclick="startVisualization()">Visualize Solver</button>
+        <button onclick="resetBoard()">Reset</button>
+    </div>
+
+    <div id="board"></div>
+
+    <script>
+        const boardContainer = document.getElementById('board');
+        let n = 8;
+
+        function updateLabel(val) {
+            document.getElementById('n-label').innerText = val;
+            n = parseInt(val);
+            drawEmptyBoard();
+        }
+
+        function drawEmptyBoard() {
+            boardContainer.innerHTML = '';
+            boardContainer.style.gridTemplateColumns = `repeat(${n}, 50px)`;
+            for (let i = 0; i < n * n; i++) {
+                const cell = document.createElement('div');
+                const isBlack = (Math.floor(i / n) + (i % n)) % 2 === 1;
+                cell.className = `cell ${isBlack ? 'black' : 'white'}`;
+                cell.id = `cell-${Math.floor(i / n)}-${i % n}`;
+                boardContainer.appendChild(cell);
+            }
+        }
+
+        async function isSafe(board, row, col) {
+            for (let i = 0; i < row; i++) {
+                // Check column and diagonals
+                if (board[i] === col || 
+                    Math.abs(board[i] - col) === Math.abs(i - row)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        async function solve(board, row) {
+            if (row === n) return true;
+
+            for (let col = 0; col < n; col++) {
+                const cell = document.getElementById(`cell-${row}-${col}`);
+                
+                // Visualization: Show trying
+                cell.innerHTML = '👑';
+                cell.style.opacity = "0.5";
+                await new Promise(r => setTimeout(r, 100)); // Delay for effect
+
+                if (await isSafe(board, row, col)) {
+                    board[row] = col;
+                    cell.style.opacity = "1";
+                    if (await solve(board, row + 1)) return true;
+                }
+
+                // Backtrack: Remove queen
+                cell.innerHTML = '';
+                board[row] = -1;
+            }
+            return false;
+        }
+
+        function startVisualization() {
+            drawEmptyBoard();
+            const boardArr = new Array(n).fill(-1);
+            solve(boardArr, 0);
+        }
+
+        function resetBoard() {
+            drawEmptyBoard();
+        }
+
+        // Initialize board on load
+        drawEmptyBoard();
+    </script>
+</body>
+</html>
